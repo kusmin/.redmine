@@ -1,0 +1,51 @@
+version: '3.1'
+services:
+  redmine-themes:
+    image: dmitriiageev/redmine-themes
+    volumes:
+      - redmine-themes:/usr/src/redmine/public/themes
+
+  redmine-plugins:
+    image: dmitriiageev/redmine-plugins
+    volumes:
+      - redmine-plugins:/usr/src/redmine/plugins
+      - redmine-initdb:/docker-entrypoint-initdb.d
+  postgres:
+    image: postgres:latest
+    restart: always
+    networks:
+      - redmine
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - 'POSTGRES_PASSWORD=password'
+      - 'POSTGRES_DB=redmine'
+  redmine:
+    image: redmine:latest
+    restart: always
+    depends_on:
+      - postgres
+      - redmine-plugins
+      - redmine-themes
+    networks:
+      - redmine
+    volumes:
+      - redmine-data:/usr/src/redmine/files
+      - redmine-themes:/usr/src/redmine/public/themes
+      - redmine-plugins:/usr/src/redmine/plugins
+    ports:
+      - 3200:3000
+    environment:
+      - 'REDMINE_DB_POSTGRES=postgres'
+      - 'REDMINE_DB_DATABASE=redmine'
+      - 'REDMINE_DB_PASSWORD=password'
+      - 'REDMINE_PLUGINS_MIGRATE=true'
+      - 'REDMINE_PLUGINS_MIGRATE="yes"'
+volumes:
+  postgres-data:
+  redmine-data:
+  redmine-themes:
+  redmine-plugins:
+networks:
+  redmine:
+    driver: bridge
